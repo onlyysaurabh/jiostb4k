@@ -1,0 +1,15 @@
+# Large firmware archives and partition dumps (>50MB / GitHub limits)
+ota_packages/
+*.img
+*.bin
+*.zip
+*.tar.gz
+
+# Python cache & temp
+__pycache__/
+*.py[cod]
+
+# OS & editor files
+.DS_Store
+*.swp
+*~
