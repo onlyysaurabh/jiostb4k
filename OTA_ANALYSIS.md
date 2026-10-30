@@ -18,6 +18,8 @@ User-Agent: Android
 * **Source URL:** `http://fota.slv.kai.jiophone.net/BHTS/DIN1009/SA002_19/loOOGaJIPm.zip`
 * **Edge Server:** `104.96.177.202` (Akamai Technologies / `AkamaiNetStorage`)
 * **Local Package Path:** [`ota_packages/loOOGaJIPm.zip`](ota_packages/loOOGaJIPm.zip)
+* **GitHub Release Asset:** [Download from GitHub Releases (v25.1.9)](https://github.com/onlyysaurabh/jiostb4k/releases/tag/v25.1.9)
+* **Download Helper:** `./scripts/download_firmware.sh --all`
 * **Archive Size:** 755.80 MB (792,517,294 bytes)
 * **SHA-256 Checksum:** `e1e6d62e712d9e88ba504a9e0f907d20ae2f0e896060f70daddb9dc149ed8596`
 * **OTA Format:** Android A/B Seamless Streaming Update (`ota-type=AB`)

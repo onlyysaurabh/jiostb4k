@@ -45,8 +45,8 @@ Primary objective: educational research into device internals and firmware.
 
 **`jio_infrastructure/`** — 13-document master suite mapping Jio's backend ecosystem: AS routing/topology, TR-069 ACS clusters & private PKI, FOTA CDN distribution, auth/SSO, IPTV/DRM/EPG, Magnum telemetry & push, Mercury AdTech, voice AI (HelloJio/Reverie/SOE), direct IPs & LAN daemons, 88 privileged APKs & IPC catalog, security audit/attack surface, boot/TrustZone infra, network trust & SELinux (138 system CA certs). Includes [`ENDPOINTS_REFERENCE.json`](jio_infrastructure/ENDPOINTS_REFERENCE.json). See [`jio_infrastructure/README.md`](jio_infrastructure/README.md).
 
-**`ota_packages/`** — Raw OTA `loOOGaJIPm.zip` + extracted partitions/APKs.
-**`scripts/`** — `capture_stb_urls.sh`, `probe_firmwares.py`, `kai_fota_urls.py`, `pull_apks_adb.sh`.
+**`ota_packages/`** — Raw OTA `loOOGaJIPm.zip` + extracted partitions/APKs. All flashable images (`boot.img`, `system.img`, etc.) and system APKs are hosted on the [GitHub Release v25.1.9](https://github.com/onlyysaurabh/jiostb4k/releases/tag/v25.1.9) (download helper: `./scripts/download_firmware.sh`).
+**`scripts/`** — `download_firmware.sh`, `capture_stb_urls.sh`, `probe_firmwares.py`, `kai_fota_urls.py`, `pull_apks_adb.sh`.
 **`img/`** — Teardown photos + eMMC short-point macros.
 **`Housekeeping-PoC/`** — Two-stage bootloader unlock (TR-069/GenieACS ADB enable + CVE-2024-31317 zygote command injection). See [`Housekeeping-PoC/README.md`](Housekeeping-PoC/README.md).
 

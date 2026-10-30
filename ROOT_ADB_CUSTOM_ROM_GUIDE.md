@@ -114,7 +114,7 @@ For the exhaustive teardown, trace photographs, and flashing procedure, see [AML
 
 ### Approach A: Magisk Ramdisk Patching + Fastboot / AVB Bypass
 
-The extracted OTA firmware contains the GKI v3 boot partitions:
+The extracted OTA firmware contains the GKI v3 boot partitions (available from [GitHub Releases v25.1.9](https://github.com/onlyysaurabh/jiostb4k/releases/tag/v25.1.9) or via `./scripts/download_firmware.sh --boot`):
 * `ota_packages/extracted/partitions/boot.img` (Linux Kernel 5.4 + base ramdisk)
 * `ota_packages/extracted/partitions/vendor_boot.img` (Vendor ramdisk + DTB)
 
