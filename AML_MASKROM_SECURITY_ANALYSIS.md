@@ -73,55 +73,72 @@ public static final String SHOW_HIDDEN_OPTION_CODE = "23232323232323232323";
 
 ---
 
-### 1.2 The "Factory Setup" Trap: Why USB APK Sideloading Still Fails
-Even if `setShowHiddenOptions(true)` is activated and the hidden **"Factory Setup"** menu is clicked, arbitrary APK installation is cryptographically prevented.
+### 1.2 Factory Setup USB APK Path: The Signer Check
+The hidden **Factory Setup** item is a JioSettings-managed USB installer, not Android's general "open this APK" installer. Its code applies a signer check before it asks Android's `PackageInstaller` to install anything. This is why a normal APK copied to USB is skipped even when the APK itself is valid.
 
-Decompiling `SystemSettingsFragment.java` and `ApplicationUtilKt.java`:
+The analysis below is from the decompiled `JioSettings.apk` in `ota_packages/extracted/apks/jio_system_priv_app/JioSettings.apk` (`com.rjil.jiostbsetting`, manifest version `15.1.5`). The decoded Java is reconstructed by JADX; the control flow and strings below are present in the APK.
+
+#### 1. Entry point and USB copy
+Clicking the Factory Setup row calls `openAndTestFactorySetup()`. It passes the mounted USB volume path and the directory name `factory_apps` to `copyFileFromUSBtoExternal()`, then runs `checkFactoryApps()`.
+
+The copy helper reads **direct child files** of `<USB volume>/factory_apps`; it copies files ending in `.apk` and skips AppleDouble files whose names start with `._`. It does not recursively search subdirectories. When shared external storage is mounted, the destination is `${Environment.getExternalStorageDirectory()}/Factory_app` (commonly `/storage/emulated/0/Factory_app`); otherwise it falls back to the app's external-files directory.
+
+#### 2. APK metadata and signer gate
+For each file in the destination directory, `checkFactoryApps()` first asks Android to parse its package name. If parsing fails, the file is skipped. It then compares the candidate APK's JAR signer certificate to the signer certificate of JioSettings itself. The central branch is:
+
 ```java
-// SystemSettingsFragment.java
-if (Intrinsics.areEqual(title, getString(R.string.factory_setup))) {
-    openAndTestFactorySetup();
-}
+String settingCertificate = getSettingCertificate(context);
+String packageName = getPackageNameFromApk(context, apk.getPath());
 
-private final void openAndTestFactorySetup() {
-    // Reads USB drive looking for "factory_apps" directory
-    ApplicationUtilKt.copyFileFromUSBtoExternal(context, path, "factory_apps");
-    ApplicationUtilKt.checkFactoryApps(context);
-}
-```
-
-In `ApplicationUtilKt.java`:
-```java
-public static final ArrayList<String> checkFactoryApps(Context context) {
-    ...
-    String settingCertificate = getSettingCertificate(context);
-    for (File it : fileArrListFiles) {
-        if (it.isFile()) {
-            boolean zIsAppSignedWithCertificate = isAppSignedWithCertificate(settingCertificate, it);
-            LoggerKt.logger("checkFactoryApps: appSignedWithCertificate: " + zIsAppSignedWithCertificate);
-            if (zIsAppSignedWithCertificate) {
-                LoggerKt.logger("checkFactoryApps: apk is certified to install");
-                installApk(context, it);
-            } else {
-                LoggerKt.logger("checkFactoryApps: apk is not certified to install");
-            }
+if (packageName != null) {
+    boolean signerMatches = isAppSignedWithCertificate(settingCertificate, apk);
+    if (signerMatches) {
+        if (!isAppPackageInstalled(context, packageName)) {
+            installApk(context, apk);
+        } else {
+            // Already installed: reported as installed; installApk is not called.
         }
+    } else {
+        LoggerKt.logger("checkFactoryApps: apk is not certified to install");
     }
 }
 ```
 
+`getSettingCertificate()` reads JioSettings' own signing certificate with `PackageManager.getPackageInfo()` (`GET_SIGNING_CERTIFICATES` on Android 9/API 28 and later; `GET_SIGNATURES` on older versions). It takes the first APK content signer. `getCertificateSHA256()` computes SHA-256 over the certificate's encoded bytes and Base64-encodes the digest without line breaks. This is a **certificate fingerprint**, not a hash of the APK file.
+
+`isAppSignedWithCertificate()` opens the candidate with `java.util.jar.JarFile`. For each non-directory, non-`META-INF/` entry, it reads the entry fully so the JAR signature is checked, obtains the entry's signer certificates, and compares each certificate's SHA-256 fingerprint with JioSettings' expected fingerprint. No matching certificate, an unparseable/unsigned APK, or an exception returns `false`; that APK never reaches `installApk()`.
+
+The checked-in JioSettings APK verifies with `apksigner`; its reported certificate SHA-256 is `3594dd51b8eba15fb5be4e229c5c1a061c6c1e220b421339e2f37e30d37b0a88` (hex form). JioSettings' code compares the equivalent digest in Base64 form. Since this check reads JAR entry certificates, the code does not establish that a v2/v3-only APK with no usable JAR signer will pass this custom gate; Android performs its own APK validation later as well.
+
+#### 3. Install operation after approval
+Only a matching signer reaches `installApk()`. That method uses `PackageManager.getPackageInstaller()`, creates a `SessionParams(1)` full-install session, writes the APK bytes to the session, calls `fsync()`, and commits with an `InstallReceiver` callback. The receiver logs success or the PackageInstaller status message. This is a direct `PackageInstaller` session, rather than a launch of the user-facing package-installer screen.
+
+An already-installed package is not reinstalled by this Factory Setup loop: the code logs that it is already installed and skips `installApk()`. A package with a different signer is rejected before Android's installer is called. This custom filter is the decisive difference for the USB route.
+
+#### 4. Why Jio Store installs follow a different route
+The checked-in `JioStore.apk` (`com.jio.store`, manifest version `1.5.8.7`) declares `INSTALL_PACKAGES`, `REQUEST_INSTALL_PACKAGES`, `DELETE_PACKAGES`, and `REQUEST_DELETE_PACKAGES`. The JioSettings manifest also declares `INSTALL_PACKAGES`; therefore, the Factory Setup restriction is not simply a limitation of Android's install API. It is a policy check in JioSettings' own USB workflow, which runs before that API is called.
+
+The decompiled Jio Store install helper also uses `PackageInstaller` sessions. In simplified form, it takes a downloaded APK path and the expected package name, creates a full-install session, writes the APK into it, and commits the session:
+
 ```java
-private static final String getSettingCertificate(Context context) {
-    PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 134217728);
-    Signature[] apkContentsSigners = packageInfo.signingInfo.getApkContentsSigners();
-    return getCertificateSHA256(apkContentsSigners[0].toByteArray());
-}
+PackageInstaller installer = context.getPackageManager().getPackageInstaller();
+SessionParams params = new SessionParams(MODE_FULL_INSTALL);
+params.setAppPackageName(packageName);
+int sessionId = installer.createSession(params);
+Session session = installer.openSession(sessionId);
+// Copy downloaded APK bytes into the session and fsync.
+session.commit(installCompleteCallback);
 ```
 
-#### The Cryptographic Barrier:
-* `getSettingCertificate()` extracts the SHA-256 fingerprint of `JioSettings.apk`'s own platform certificate (issued by Jio Platforms / Skyworth).
-* `isAppSignedWithCertificate()` inspects the JAR signatures inside the candidate APK in `/factory_apps/`.
-* Any APK not signed with the OEM/Carrier platform private key is rejected (`"apk is not certified to install"`). Sideloading custom tools, debuggers, or generic launchers via "Factory Setup" is strictly blocked.
+So the distinction is **which preinstalled component requests the install and what checks that component applies**. Factory Setup requires a candidate signer to match JioSettings' signer. Jio Store's internal install path submits a selected/downloaded package through the store's PackageInstaller session; it does not call the Factory Setup signer-check function. Android still validates the APK and its package-signing/update rules. The catalog row is evidence of the store's declared permissions, not proof by itself that every permission is granted in every firmware build; the matching live permission grant/allowlist is not included in this APK-only extraction.
+
+This does not mean Factory Setup checks whether an APK came from Jio Store. It checks the signer certificate. In principle, any APK signed with the expected JioSettings signer could pass that check, while a Jio Store download signed by a different publisher would not pass it if copied into `factory_apps`.
+
+#### 5. Scope and evidence limits
+* This code proves the policy for the **Factory Setup USB path**. It does not prove that Android's ordinary "Install unknown apps" setting or every file-manager/browser install path is globally disabled; those are separate flows.
+* The guide documents `adb install` as another route when ADB is enabled and authorized: [`ROOT_ADB_CUSTOM_ROM_GUIDE.md`](ROOT_ADB_CUSTOM_ROM_GUIDE.md).
+* The checked-in JioStore manifest and decompiled install helper show requested permissions and install-session behavior. However, `apksigner verify --print-certs` fails on the current `JioStore.apk` artifact because its JAR metadata indicates a v2 signature but the v2 signature block is absent. Treat its manifest/code as static-analysis evidence, not proof that this exact file is an intact, installable production APK or that its permissions were granted at runtime.
+* The practical effect is an OEM-controlled factory provisioning path. That it is intended to restrict unapproved apps for security, compatibility, or support reasons is a reasonable inference; the implementation does not state the product rationale.
 
 ---
 

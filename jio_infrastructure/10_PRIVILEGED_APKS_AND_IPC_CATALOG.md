@@ -29,6 +29,8 @@ The extracted application suite is divided into 10 operational tiers:
 
 Below is the verified matrix of all proprietary Jio privileged packages extracted from the Android 11 OS payload:
 
+The permissions column lists manifest declarations. A permission declaration alone does not prove that Android granted a signature or privileged permission at runtime. The Factory Setup signer check and the distinct Jio Store install path are documented in [the mask-ROM analysis, §1.2](../AML_MASKROM_SECURITY_ANALYSIS.md#12-factory-setup-usb-apk-path-the-signer-check).
+
 | Package File | Android Package Name | Version | Critical Permissions Declared | Primary Architectural Role |
 | :--- | :--- | :--- | :--- | :--- |
 | **`TR069.apk`** | `com.jio.tr069client` | `4.2.3` | `WRITE_SECURE_SETTINGS`, `MANAGE_DEVICE_POLICY_DEBUGGING_FEATURES`, `REBOOT`, `RECOVERY` | CWMP carrier management, remote ADB control, policy enforcement. |
@@ -39,14 +41,14 @@ Below is the verified matrix of all proprietary Jio privileged packages extracte
 | **`JioInputSource.apk`** | `com.jio.stb.inputsource` | `1.0.5` | `TV_INPUT_HARDWARE` | Tuner HAL binding, unicast DRM key coordination (`ucast-key.iptv.jio.com`). |
 | **`JioLauncher.apk`** | `com.iwedia.ui.rjio.launcher.reliance` | `3.0.72` | `WRITE_SETTINGS`, `PACKAGE_USAGE_STATS` | Default Android TV Leanback launcher, dynamic category rendering. |
 | **`JioHotelLauncher.apk`** | `com.jio.stb.hotellauncher` | `2.0.18` | `WRITE_SETTINGS`, `REBOOT` | Hospitality firmware launcher, dynamic room signage, guest token reset. |
-| **`JioSettings.apk`** | `com.rjil.jiostbsetting` | `2.4.9` | `WRITE_SECURE_SETTINGS`, `CHANGE_WIFI_STATE` | Custom system settings UI, Wi-Fi configuration, STB diagnostics. |
+| **`JioSettings.apk`** | `com.rjil.jiostbsetting` | `15.1.5` | `INSTALL_PACKAGES`, `DELETE_PACKAGES`, `REQUEST_DELETE_PACKAGES`, `WRITE_SECURE_SETTINGS`, `CHANGE_WIFI_STATE` | Custom system settings UI, diagnostics, and Factory Setup USB APK signer-check/installer. |
 | **`JioAdc.apk`** | `com.jio.adc.embedded` | `1.5.0` | `READ_PRIVILEGED_PHONE_STATE` | Automated Data Collector (ADC), event batching, Magnum ingest. |
 | **`AKA.apk`** | `com.jio.adc.aka` | `1.0.3` | `DUMP`, `BATTERY_STATS` | Hardware sensor monitoring, thermal tracking, memory footprint analytics. |
 | **`PODLogService.apk`** | `com.jio.podlogservice` | `1.0.1` | `READ_LOGS`, `DUMP` | Automated logcat, tombstone, and dmesg log compression and upload. |
 | **`JioSmartStats.apk`** | `com.jio.smartstats` | `1.1.2` | `ACCESS_NETWORK_STATE` | Video QoE (Quality of Experience) packet loss and buffer metrics. |
 | **`JioVoice.apk`** | `com.jio.voiceassist` | `3.0.52` | `RECORD_AUDIO`, `CAPTURE_AUDIO_OUTPUT` | HelloJio voice assistant, Reverie offline edge ASR engine, Azure speech synthesis. |
 | **`BTRemoteServer.apk`** | `com.jio.remote.btserver` | `2.1.0` | `BLUETOOTH_PRIVILEGED`, `BLUETOOTH_ADMIN` | Bluetooth Low Energy voice remote GATT pairing and audio pipeline. |
-| **`JioStore.apk`** | `com.jio.store` | `3.2.14` | `INSTALL_PACKAGES`, `DELETE_PACKAGES` | Proprietary app store, cleartext PHP proxy integration (`49.40.64.244`). |
+| **`JioStore.apk`** | `com.jio.store` | `1.5.8.7` | `INSTALL_PACKAGES`, `REQUEST_INSTALL_PACKAGES`, `DELETE_PACKAGES`, `REQUEST_DELETE_PACKAGES` | Proprietary app store and PackageInstaller client, cleartext PHP proxy integration (`49.40.64.244`). |
 | **`JioAdsPushService.apk`** | `com.jio.adspush` | `2.0.4` | `RECEIVE_BOOT_COMPLETED` | Mercury push ad campaign synchronization and image caching. |
 | **`JioScreensaver.apk`** | `com.jio.screensaver` | `2.3.7` | `WAKE_LOCK` | Sponsored screensaver display, Mercury attribution click tracking. |
 | **`JioAppOptimizer.apk`** | `com.jio.appoptimizer` | `1.2.0` | `FORCE_STOP_PACKAGES`, `KILL_BACKGROUND_PROCESSES` | App whitelisting and background process killer for memory management. |
