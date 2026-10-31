@@ -38,6 +38,7 @@ Primary objective: educational research into device internals and firmware.
 | [`AML_MASKROM_SECURITY_ANALYSIS.md`](AML_MASKROM_SECURITY_ANALYSIS.md) | MaskROM / WorldCup flashing — force MaskROM (short eMMC `CLK`→GND), AVB/dm-verity signing, eMMC short points |
 | [`JDWP_SYSTEM_ESCALATION_FINDINGS.md`](JDWP_SYSTEM_ESCALATION_FINDINGS.md) | JDWP system-UID escalation — `jdb` attach to `JioCommandReceiver` (UID 1000) |
 | [`NETWORK_ANALYSIS.md`](NETWORK_ANALYSIS.md) | Network traffic — CDN firmware endpoints, UDP 5775 discovery, carrier comms |
+| [`DISABLE_STB_AUTO_UPDATES.md`](DISABLE_STB_AUTO_UPDATES.md) | Reversible ADB procedure to disable the documented Jio firmware auto-update paths on JMSB200A build `25.1.9` |
 | [`TR069_ACS_RESEARCH.md`](TR069_ACS_RESEARCH.md) | TR-069 / ACS — CWMP mechanics, TR-181/TR-135 data model, security posture |
 | [`TR069_REMOTE_ADB_ANALYSIS.md`](TR069_REMOTE_ADB_ANALYSIS.md) | TR069.apk remote ADB — `Device.JioSTB.USB.USBDebugging` (24h auto-disable), CLU shell, TLS trust |
 | [`FIRMWARE_ENDPOINTS_AND_EXPOSURES.md`](FIRMWARE_ENDPOINTS_AND_EXPOSURES.md) | FOTA CDN tiers & exposed firmwares — `kai`, `fxd`, `jiostb.cdn.jio.com`, `iotacs`; `JioHttpUpdate.apk` (54321/TCP) |
@@ -59,6 +60,8 @@ Primary objective: educational research into device internals and firmware.
 **Unlock bootloader / disable AVB dm-verity** — [`AML_MASKROM_SECURITY_ANALYSIS.md`](AML_MASKROM_SECURITY_ANALYSIS.md) §5; `fastboot flash vbmeta --disable-verity --disable-verification vbmeta.img` ([`ROOT_ADB_CUSTOM_ROM_GUIDE.md`](ROOT_ADB_CUSTOM_ROM_GUIDE.md) §2); [`Housekeeping-PoC/`](Housekeeping-PoC/) Stage 2 (CVE-2024-31317 flips `lock` bit, SELinux permissive).
 
 **Flash custom ROMs / GSI** — [`ROOT_ADB_CUSTOM_ROM_GUIDE.md`](ROOT_ADB_CUSTOM_ROM_GUIDE.md) §3 — CoreELEC USB boot (recommended), Treble GSI (`arm-a`/`arm_bvN`, 32-bit userland on 64-bit kernel), `pm disable-user` debloating.
+
+**Disable automatic firmware updates** — [`DISABLE_STB_AUTO_UPDATES.md`](DISABLE_STB_AUTO_UPDATES.md) — reversible ADB package-manager steps, with the effect of disabling the TR-069 management client.
 
 **Network & carrier infra** — [`NETWORK_ANALYSIS.md`](NETWORK_ANALYSIS.md), [`TR069_ACS_RESEARCH.md`](TR069_ACS_RESEARCH.md), [`FIRMWARE_ENDPOINTS_AND_EXPOSURES.md`](FIRMWARE_ENDPOINTS_AND_EXPOSURES.md), [`VOICE_DYNAMIC_CONFIG_RESEARCH.md`](VOICE_DYNAMIC_CONFIG_RESEARCH.md), [`jio_infrastructure/README.md`](jio_infrastructure/README.md).
 
